@@ -6,13 +6,13 @@
 }
 
 :root {
-    --primary: #00f5ff;
-    --secondary: #ff00ff;
-    --accent: #ffff00;
-    --dark: #0a0a0f;
-    --darker: #050508;
-    --light: #ffffff;
-    --gray: #8892b0;
+    --primary: #4a90d9;
+    --secondary: #6b5b95;
+    --accent: #88b04b;
+    --dark: #0d1117;
+    --darker: #010409;
+    --light: #c9d1d9;
+    --gray: #8b949e;
 }
 
 html {
