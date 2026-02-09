@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数独游戏 - Sudoku ☁️</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 10px;
+            font-size: 28px;
+        }
+        
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 20px;
+            font-size: 14px;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+        
+        select, button {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            border-radius: 8px;
+            font-size: 14px;
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+        
+        select {
+            background: white;
+            color: #333;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+        }
+        
+        button:hover {
+            background: #5a6fd6;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+        
+        button.secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        
+        button.secondary:hover {
+            background: #e0e0e0;
+        }
+        
+        .sudoku-board {
+            display: grid;
+            grid-template-columns: repeat(9, 1fr);
+            gap: 1px;
+            background: #333;
+            border: 3px solid #333;
+            border-radius: 8px;
+            overflow: hidden;
+            margin-bottom: 20px;
+        }
+        
+        .cell {
+            aspect-ratio: 1;
+            background: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s;
+            user-select: none;
+        }
+        
+        .cell:hover {
+            background: #e8f4f8;
+        }
+        
+        .cell.selected {
+            background: #667eea !important;
+            color: white;
+        }
+        
+        .cell.highlighted {
+            background: #e8f4f8;
+        }
+        
+        .cell.original {
+            color: #333;
+            font-weight: 700;
+            background: #f5f5f5;
+        }
+        
+        .cell.user-filled {
+            color: #667eea;
+        }
+        
+        .cell.error {
+            background: #ffebee !important;
+            color: #c62828;
+        }
+        
+        .cell.same-number {
+            background: #fff3e0 !important;
+        }
+        
+        /* 3x3 方格边框 */
+        .cell:nth-child(3n) {
+            border-right: 2px solid #333;
+        }
+        
+        .cell:nth-child(n+19):nth-child(-n+27),
+        .cell:nth-child(n+46):nth-child(-n+54) {
+            border-bottom: 2px solid #333;
+        }
+        
+        .numpad {
+            display: grid;
+            grid-template-columns: repeat(5, 1fr);
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+        
+        .numpad button {
+            padding: 15px;
+            font-size: 18px;
+            font-weight: 600;
+        }
+        
+        .numpad button.clear {
+            background: #ff6b6b;
+        }
+        
+        .numpad button.clear:hover {
+            background: #ee5a5a;
+        }
+        
+        .status {
+            text-align: center;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            font-weight: 500;
+            min-height: 50px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .status.info {
+            background: #e3f2fd;
+            color: #1976d2;
+        }
+        
+        .status.success {
+            background: #e8f5e9;
+            color: #388e3c;
+        }
+        
+        .status.error {
+            background: #ffebee;
+            color: #c62828;
+        }
+        
+        .timer {
+            text-align: center;
+            font-size: 18px;
+            color: #666;
+            margin-bottom: 15px;
+            font-family: 'Courier New', monospace;
+        }
+        
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+        }
+        
+        .modal.show {
+            display: flex;
+        }
+        
+        .modal-content {
+            background: white;
+            padding: 40px;
+            border-radius: 20px;
+            text-align: center;
+            animation: popIn 0.3s ease;
+        }
+        
+        @keyframes popIn {
+            from {
+                transform: scale(0.8);
+                opacity: 0;
+            }
+            to {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+        
+        .modal-content h2 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 32px;
+        }
+        
+        .modal-content p {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 18px;
+        }
+        
+        .modal-content .time-display {
+            font-size: 24px;
+            color: #333;
+            font-weight: 600;
+            margin-bottom: 20px;
+        }
+        
+        @media (max-width: 480px) {
+            .container {
+                padding: 15px;
+            }
+            
+            .cell {
+                font-size: 16px;
+            }
+            
+            .numpad button {
+                padding: 12px;
+                font-size: 16px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎮 数独游戏 ☁️</h1>
+        <p class="subtitle">点击格子，选择数字</p>
+        
+        <div class="controls">
+            <select id="difficulty">
+                <option value="easy">简单</option>
+                <option value="medium" selected>中等</option>
+                <option value="hard">困难</option>
+                <option value="expert">专家</option>
+            </select>
+            <button onclick="newGame()">新游戏</button>
+            <button class="secondary" onclick="getHint()">💡 提示</button>
+        </div>
+        
+        <div class="timer" id="timer">00:00</div>
+        
+        <div class="status info" id="status">点击空格开始游戏</div>
+        
+        <div class="sudoku-board" id="board"></div>
+        
+        <div class="numpad">
+            <button onclick="inputNumber(1)">1</button>
+            <button onclick="inputNumber(2)">2</button>
+            <button onclick="inputNumber(3)">3</button>
+            <button onclick="inputNumber(4)">4</button>
+            <button onclick="inputNumber(5)">5</button>
+            <button onclick="inputNumber(6)">6</button>
+            <button onclick="inputNumber(7)">7</button>
+            <button onclick="inputNumber(8)">8</button>
+            <button onclick="inputNumber(9)">9</button>
+            <button class="clear" onclick="clearCell()">✕</button>
+        </div>
+        
+        <div class="controls">
+            <button class="secondary" onclick="checkSolution()">✓ 检查</button>
+            <button class="secondary" onclick="saveGame()">💾 保存</button>
+            <button class="secondary" onclick="loadGame()">📂 加载</button>
+        </div>
+    </div>
+    
+    <div class="modal" id="winModal">
+        <div class="modal-content">
+            <h2>🎉 恭喜你！</h2>
+            <p>你成功完成了数独！</p>
+            <div class="time-display" id="finalTime"></div>
+            <button onclick="closeModal(); newGame()">再玩一局</button>
+        </div>
+    </div>
+
+    <script>
+        // 游戏状态
+        let board = [];
+        let solution = [];
+        let original = [];
+        let selectedCell = null;
+        let timerInterval = null;
+        let seconds = 0;
+        let gameStarted = false;
+
+        // 初始化
+        function init() {
+            newGame();
+        }
+
+        // 生成完整的数独解
+        function generateSolution() {
+            const board = Array(9).fill().map(() => Array(9).fill(0));
+            
+            // 填充对角线的3个3x3方格
+            for (let box = 0; box < 3; box++) {
+                const nums = [1,2,3,4,5,6,7,8,9].sort(() => Math.random() - 0.5);
+                const startRow = box * 3;
+                const startCol = box * 3;
+                let idx = 0;
+                for (let i = 0; i < 3; i++) {
+                    for (let j = 0; j < 3; j++) {
+                        board[startRow + i][startCol + j] = nums[idx++];
+                    }
+                }
+            }
+            
+            // 使用回溯求解
+            solve(board);
+            return board;
+        }
+
+        // 检查数字是否有效
+        function isValid(board, row, col, num) {
+            // 检查行
+            for (let c = 0; c < 9; c++) {
+                if (board[row][c] === num) return false;
+            }
+            
+            // 检查列
+            for (let r = 0; r < 9; r++) {
+                if (board[r][col] === num) return false;
+            }
+            
+            // 检查3x3方格
+            const startRow = Math.floor(row / 3) * 3;
+            const startCol = Math.floor(col / 3) * 3;
+            for (let r = startRow; r < startRow + 3; r++) {
+                for (let c = startCol; c < startCol + 3; c++) {
+                    if (board[r][c] === num) return false;
+                }
+            }
+            
+            return true;
+        }
+
+        // 求解数独
+        function solve(board) {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (board[row][col] === 0) {
+                        for (let num = 1; num <= 9; num++) {
+                            if (isValid(board, row, col, num)) {
+                                board[row][col] = num;
+                                if (solve(board)) return true;
+                                board[row][col] = 0;
+                            }
+                        }
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        // 生成游戏（根据难度移除数字）
+        function generatePuzzle(difficulty) {
+            const difficulties = {
+                'easy': 40,
+                'medium': 35,
+                'hard': 28,
+                'expert': 22
+            };
+            
+            solution = generateSolution();
+            board = solution.map(row => [...row]);
+            
+            const cellsToKeep = difficulties[difficulty] || 35;
+            const cellsToRemove = 81 - cellsToKeep;
+            
+            const positions = [];
+            for (let i = 0; i < 9; i++) {
+                for (let j = 0; j < 9; j++) {
+                    positions.push([i, j]);
+                }
+            }
+            positions.sort(() => Math.random() - 0.5);
+            
+            let removed = 0;
+            for (const [row, col] of positions) {
+                if (removed >= cellsToRemove) break;
+                const temp = board[row][col];
+                board[row][col] = 0;
+                removed++;
+            }
+            
+            original = board.map(row => [...row]);
+        }
+
+        // 渲染棋盘
+        function renderBoard() {
+            const boardEl = document.getElementById('board');
+            boardEl.innerHTML = '';
+            
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    const cell = document.createElement('div');
+                    cell.className = 'cell';
+                    cell.dataset.row = row;
+                    cell.dataset.col = col;
+                    
+                    const value = board[row][col];
+                    if (value !== 0) {
+                        cell.textContent = value;
+                        if (original[row][col] !== 0) {
+                            cell.classList.add('original');
+                        } else {
+                            cell.classList.add('user-filled');
+                        }
+                    }
+                    
+                    cell.onclick = () => selectCell(row, col);
+                    boardEl.appendChild(cell);
+                }
+            }
+        }
+
+        // 选择格子
+        function selectCell(row, col) {
+            selectedCell = { row, col };
+            
+            // 更新选中状态
+            document.querySelectorAll('.cell').forEach((cell, index) => {
+                cell.classList.remove('selected', 'highlighted', 'same-number');
+                
+                const r = Math.floor(index / 9);
+                const c = index % 9;
+                
+                // 高亮同行同列同宫格
+                if (r === row || c === col || 
+                    (Math.floor(r/3) === Math.floor(row/3) && Math.floor(c/3) === Math.floor(col/3))) {
+                    cell.classList.add('highlighted');
+                }
+                
+                // 高亮相同数字
+                if (board[r][c] !== 0 && board[r][c] === board[row][col] && board[row][col] !== 0) {
+                    cell.classList.add('same-number');
+                }
+            });
+            
+            // 标记选中
+            const index = row * 9 + col;
+            document.querySelectorAll('.cell')[index].classList.add('selected');
+            
+            if (original[row][col] !== 0) {
+                showStatus('这是原始数字，不能修改', 'info');
+            }
+        }
+
+        // 输入数字
+        function inputNumber(num) {
+            if (!selectedCell) {
+                showStatus('请先选择一个格子', 'error');
+                return;
+            }
+            
+            const { row, col } = selectedCell;
+            
+            if (original[row][col] !== 0) {
+                showStatus('不能修改原始数字', 'error');
+                return;
+            }
+            
+            board[row][col] = num;
+            renderBoard();
+            selectCell(row, col); // 保持选中
+            
+            showStatus('', 'info');
+            
+            // 检查是否完成
+            if (isComplete()) {
+                checkWin();
+            }
+            
+            // 自动保存
+            autoSave();
+        }
+
+        // 清除格子
+        function clearCell() {
+            if (!selectedCell) return;
+            
+            const { row, col } = selectedCell;
+            
+            if (original[row][col] !== 0) {
+                showStatus('不能清除原始数字', 'error');
+                return;
+            }
+            
+            board[row][col] = 0;
+            renderBoard();
+            selectCell(row, col);
+            autoSave();
+        }
+
+        // 检查是否完成
+        function isComplete() {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (board[row][col] === 0) return false;
+                }
+            }
+            return true;
+        }
+
+        // 检查答案
+        function checkSolution() {
+            let hasError = false;
+            const cells = document.querySelectorAll('.cell');
+            
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    const index = row * 9 + col;
+                    cells[index].classList.remove('error');
+                    
+                    if (board[row][col] !== 0 && board[row][col] !== solution[row][col]) {
+                        cells[index].classList.add('error');
+                        hasError = true;
+                    }
+                }
+            }
+            
+            if (hasError) {
+                showStatus('有错误！红色标记的格子不对', 'error');
+            } else if (isComplete()) {
+                showStatus('完美！全部正确！🎉', 'success');
+            } else {
+                showStatus('目前的填写都是正确的，继续加油！', 'success');
+            }
+        }
+
+        // 获取提示
+        function getHint() {
+            const emptyCells = [];
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (board[row][col] === 0) {
+                        emptyCells.push([row, col]);
+                    }
+                }
+            }
+            
+            if (emptyCells.length === 0) {
+                showStatus('没有空格了！', 'info');
+                return;
+            }
+            
+            const [row, col] = emptyCells[Math.floor(Math.random() * emptyCells.length)];
+            board[row][col] = solution[row][col];
+            renderBoard();
+            selectCell(row, col);
+            showStatus(`提示：第${row+1}行第${col+1}列是 ${solution[row][col]}`, 'info');
+            autoSave();
+        }
+
+        // 检查是否获胜
+        function checkWin() {
+            for (let row = 0; row < 9; row++) {
+                for (let col = 0; col < 9; col++) {
+                    if (board[row][col] !== solution[row][col]) {
+                        return false;
+                    }
+                }
+            }
+            
+            stopTimer();
+            document.getElementById('finalTime').textContent = `用时: ${formatTime(seconds)}`;
+            document.getElementById('winModal').classList.add('show');
+            localStorage.removeItem('sudoku_save');
+            return true;
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('winModal').classList.remove('show');
+        }
+
+        // 新游戏
+        function newGame() {
+            const difficulty = document.getElementById('difficulty').value;
+            generatePuzzle(difficulty);
+            renderBoard();
+            selectedCell = null;
+            resetTimer();
+            startTimer();
+            showStatus('新游戏开始！点击空格输入数字', 'info');
+        }
+
+        // 计时器
+        function startTimer() {
+            gameStarted = true;
+            timerInterval = setInterval(() => {
+                seconds++;
+                document.getElementById('timer').textContent = formatTime(seconds);
+            }, 1000);
+        }
+
+        function stopTimer() {
+            clearInterval(timerInterval);
+            gameStarted = false;
+        }
+
+        function resetTimer() {
+            stopTimer();
+            seconds = 0;
+            document.getElementById('timer').textContent = '00:00';
+        }
+
+        function formatTime(secs) {
+            const mins = Math.floor(secs / 60);
+            const remainingSecs = secs % 60;
+            return `${mins.toString().padStart(2, '0')}:${remainingSecs.toString().padStart(2, '0')}`;
+        }
+
+        // 显示状态信息
+        function showStatus(message, type) {
+            const status = document.getElementById('status');
+            status.textContent = message;
+            status.className = `status ${type}`;
+        }
+
+        // 保存游戏
+        function saveGame() {
+            const saveData = {
+                board: board,
+                solution: solution,
+                original: original,
+                seconds: seconds,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('sudoku_save', JSON.stringify(saveData));
+            showStatus('游戏已保存！', 'success');
+        }
+
+        // 自动保存
+        function autoSave() {
+            const saveData = {
+                board: board,
+                solution: solution,
+                original: original,
+                seconds: seconds,
+                timestamp: new Date().toISOString()
+            };
+            localStorage.setItem('sudoku_save', JSON.stringify(saveData));
+        }
+
+        // 加载游戏
+        function loadGame() {
+            const saveData = localStorage.getItem('sudoku_save');
+            if (!saveData) {
+                showStatus('没有找到存档', 'error');
+                return;
+            }
+            
+            const data = JSON.parse(saveData);
+            board = data.board;
+            solution = data.solution;
+            original = data.original;
+            seconds = data.seconds || 0;
+            
+            renderBoard();
+            resetTimer();
+            document.getElementById('timer').textContent = formatTime(seconds);
+            startTimer();
+            showStatus('已加载存档', 'success');
+        }
+
+        // 键盘支持
+        document.addEventListener('keydown', (e) => {
+            if (!selectedCell) return;
+            
+            if (e.key >= '1' && e.key <= '9') {
+                inputNumber(parseInt(e.key));
+            } else if (e.key === 'Delete' || e.key === 'Backspace') {
+                clearCell();
+            } else if (e.key === 'ArrowUp') {
+                e.preventDefault();
+                if (selectedCell.row > 0) selectCell(selectedCell.row - 1, selectedCell.col);
+            } else if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                if (selectedCell.row < 8) selectCell(selectedCell.row + 1, selectedCell.col);
+            } else if (e.key === 'ArrowLeft') {
+                e.preventDefault();
+                if (selectedCell.col > 0) selectCell(selectedCell.row, selectedCell.col - 1);
+            } else if (e.key === 'ArrowRight') {
+                e.preventDefault();
+                if (selectedCell.col < 8) selectCell(selectedCell.row, selectedCell.col + 1);
+            }
+        });
+
+        // 启动
+        init();
+    </script>
+</body>
+</html>

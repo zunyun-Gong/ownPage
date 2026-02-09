@@ -615,6 +615,17 @@ section {
     transform: translateY(-2px);
 }
 
+.link-btn.btn-play {
+    background: linear-gradient(135deg, #ff69b4, #ff1493);
+    border-color: rgba(255,105,180,0.5);
+    color: white;
+}
+
+.link-btn.btn-play:hover {
+    background: linear-gradient(135deg, #ff1493, #ff0066);
+    box-shadow: 0 4px 15px rgba(255,20,147,0.4);
+}
+
 .link-btn i {
     font-size: 14px;
 }
