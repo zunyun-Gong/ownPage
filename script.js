@@ -10,6 +10,20 @@ function resizeCanvas() {
     canvas.height = window.innerHeight;
 }
 
+// 鼠标位置
+let mouse = { x: null, y: null, radius: 150 };
+
+// 监听鼠标移动
+document.addEventListener('mousemove', (e) => {
+    mouse.x = e.clientX;
+    mouse.y = e.clientY;
+});
+
+document.addEventListener('mouseleave', () => {
+    mouse.x = null;
+    mouse.y = null;
+});
+
 class Particle {
     constructor() {
         this.x = Math.random() * canvas.width;
@@ -17,16 +31,47 @@ class Particle {
         this.vx = (Math.random() - 0.5) * 0.5;
         this.vy = (Math.random() - 0.5) * 0.5;
         this.size = Math.random() * 2 + 1;
-        this.color = Math.random() > 0.5 ? '#00f5ff' : '#ff00ff';
+        this.color = Math.random() > 0.5 ? '#4a90d9' : '#6b5b95';
         this.alpha = Math.random() * 0.5 + 0.2;
+        this.baseX = this.x;
+        this.baseY = this.y;
+        this.density = (Math.random() * 30) + 1;
     }
 
     update() {
+        // 鼠标聚集效果
+        if (mouse.x != null) {
+            let dx = mouse.x - this.x;
+            let dy = mouse.y - this.y;
+            let distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance < mouse.radius) {
+                const forceDirectionX = dx / distance;
+                const forceDirectionY = dy / distance;
+                const force = (mouse.radius - distance) / mouse.radius;
+                const directionX = forceDirectionX * force * this.density * 0.6;
+                const directionY = forceDirectionY * force * this.density * 0.6;
+                
+                this.vx += directionX * 0.05;
+                this.vy += directionY * 0.05;
+            }
+        }
+        
+        // 基础移动
         this.x += this.vx;
         this.y += this.vy;
-
+        
+        // 摩擦力，让粒子逐渐减速
+        this.vx *= 0.98;
+        this.vy *= 0.98;
+        
+        // 边界反弹
         if (this.x < 0 || this.x > canvas.width) this.vx *= -1;
         if (this.y < 0 || this.y > canvas.height) this.vy *= -1;
+        
+        // 保持在画布内
+        this.x = Math.max(0, Math.min(canvas.width, this.x));
+        this.y = Math.max(0, Math.min(canvas.height, this.y));
     }
 
     draw() {
